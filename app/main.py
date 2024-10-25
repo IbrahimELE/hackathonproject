@@ -5,6 +5,9 @@ from dotenv import load_dotenv
 from database import get_db  
 from schemas.users import UsersCreate, UsersOut, LoginForm
 from models.users import UsersDB
+from models.posts import PostsDB
+from models.comments import CommentsDB
+from models.likes import LikesDB
 from crud.users import create_user, get_user_by_email 
 from utils.authentication import create_access_token, verify_password, get_current_user, get_password_hash
 
