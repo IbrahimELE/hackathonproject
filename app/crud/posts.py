@@ -1,10 +1,10 @@
 from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from models.posts import PostsDB
-from schemas.posts import PostCreate
+from schemas.posts import PostsCreate
 from datetime import datetime
 
-def create_post(db: Session, post: PostCreate):
+def create_post(db: Session, post: PostsCreate):
     db_post = PostsDB(
         title=post.title,
         content=post.content,
@@ -23,7 +23,7 @@ def get_posts(db: Session, user_id: str):
 def get_post(db: Session, post_id: int):
     return db.query(PostsDB).filter(PostsDB.id == post_id).first()
 
-def update_post(db: Session, post_id: int, post: PostCreate):
+def update_post(db: Session, post_id: int, post: PostsCreate):
     db_post = db.query(PostsDB).filter(PostsDB.id == post_id).first()
     if db_post:
         for key, value in post.model_dump().items():

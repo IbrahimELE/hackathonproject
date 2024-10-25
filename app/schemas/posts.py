@@ -11,7 +11,7 @@ class Post_status(str, Enum):
     friends_only = "Friends only"
     public = "public"
 
-class PostCreate(BaseModel):
+class PostsCreate(BaseModel):
     id: int
     title: str
     content: str
@@ -21,7 +21,7 @@ class PostCreate(BaseModel):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-class PostOut(BaseModel):
+class PostsOut(BaseModel):
     id: int
     title: str
     content: str
@@ -30,7 +30,7 @@ class PostOut(BaseModel):
     class Config:
         from_atributes = True
 
-class Post(BaseModel):
+class Posts(BaseModel):
     id: int
     title: str
     content: str
