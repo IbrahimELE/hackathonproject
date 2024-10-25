@@ -14,7 +14,7 @@ app = FastAPI()
 
 @app.post("/register", response_model=UsersOut)
 def register(user: UsersCreate, db: Session = Depends(get_db)):
-    if get_user_by_email(db, email=user.email_address):
+    if get_user_by_email(db, email_address=user.email_address):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user_data = {
