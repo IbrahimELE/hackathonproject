@@ -7,11 +7,11 @@ class UsersDB(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True)
-    first_name = Column(String, nullable=False)
-    last_name = Column(String, nullable=False)
-    email_address = Column(String, unique=True, index=True)
-    password = Column(String, nullable=False)
+    username = Column(String(255), unique=True)
+    first_name = Column(String(255), nullable=False)
+    last_name = Column(String(255), nullable=False)
+    email_address = Column(String(255), unique=True, index=True)
+    password = Column(String(255), nullable=False)
 
     posts = relationship("PostsDB", back_populates="user")
     comments = relationship("CommentsDB", back_populates="user")

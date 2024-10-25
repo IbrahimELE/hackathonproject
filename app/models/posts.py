@@ -12,8 +12,8 @@ class PostsDB(Base):
     __tablename__ = "posts"
 
     id = Column(Integer, primary_key=True, index=True)
-    title = Column(String, nullable=False, index=True)
-    content = Column(String, nullable=False)
+    title = Column(String(255), nullable=False, index=True)
+    content = Column(String(255), nullable=False)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, nullable=False)
     post_status = Column(Enum(Post_status), nullable=False)
