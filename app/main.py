@@ -26,11 +26,14 @@ def test_db_connection(db: Session = Depends(get_db)):
 
 @app.post("/register", response_model=UsersOut)
 def register(user: UsersCreate, db: Session = Depends(get_db)):
-    if get_user_by_email(db, email_address=user.email_address):
+    if get_user_by_email(db, user.email_address):
         raise HTTPException(status_code=400, detail="Email already registered")
 
     user_data = {
-        "email": user.email_address,
+        "username": user.username,
+        "first_name":user.first_name,
+        "last_name": user.last_name,
+        "email_address": user.email_address,
         "password": get_password_hash(user.password)    
     }
     access_token = create_access_token(data={"sub": user.username})
