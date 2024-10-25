@@ -1,0 +1,47 @@
+
+/* Styling for the App component */
+
+body {
+  background-color: #F8EDED;
+}
+
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-align: center;
+  color: #2c3e50;
+}
+
+nav {
+  margin: 20px;
+  border-radius: 12px;
+  background-color: #FF8255;
+  padding: 1%;
+  display: flex;
+  justify-content: space-between;
+}
+
+div.options > * {
+  margin-left: 20px;
+}
+
+nav a {
+  color: #ffefcf;
+  text-decoration: none;
+  font-weight: bold;
+
+  transition: ease 0.25s;
+}
+
+nav a:hover {
+  text-shadow: #fefefe 0px 0px 1px;
+}
+
+nav a.router-link-active {
+  color: #ffffff;
+}
+
+#app.dark-mode {
+  
+}

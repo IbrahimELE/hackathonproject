@@ -1,18 +1,20 @@
 <template>
   <div class="content">
     <div class="form">
-      <h2>Login</h2>
+      <div class="form-heading">
+        <h2>Login</h2>
+      </div>
       <form @submit.prevent="loginUser">
         <input type="text" v-model="username" placeholder="Username" required />
         <input type="password" v-model="password" placeholder="Password" required />
-        <button type="submit">Login</button>
+        <button type="submit">Submit</button>
         <p v-if="errorMessage">{{ errorMessage }}</p>
       </form>
     </div>
   </div>
 </template>
 
-<style src="../assets/styles/form-styles.css"></style>
+<style src="../../assets/styles/form-styles.css"></style>
 
 <script>
 import axios from 'axios';
