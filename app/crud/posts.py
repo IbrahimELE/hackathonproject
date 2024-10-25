@@ -1,13 +1,15 @@
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from models.posts import PostsDB
 from schemas.posts import PostCreate
+from datetime import datetime
 
 def create_post(db: Session, post: PostCreate):
     db_post = PostsDB(
         title=post.title,
         content=post.content,
         user_id=post.user_id,
-        created_at=post.created_at,
+        created_at=datetime.now(timezone.utc),
         post_status=post.post_status
     )
     db.add(db_post)

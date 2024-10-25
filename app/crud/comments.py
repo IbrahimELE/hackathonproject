@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from sqlalchemy.orm import Session
 from models.comments import CommentsDB
 from schemas.comments import CommentsCreate
@@ -8,7 +9,7 @@ def create_comment(db: Session, comment: CommentsCreate):
         user_id=comment.user_id,
         post_id=comment.post_id,
         content=comment.content,
-        created_at=datetime.now(),
+        created_at=datetime.now(timezone.utc),
         likes=0  
     )
     db.add(db_comment)
