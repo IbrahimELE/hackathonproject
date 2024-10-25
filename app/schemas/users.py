@@ -10,7 +10,7 @@ class UsersCreate(BaseModel):
     email_address: EmailStr
     password: str = Field(min_length=8)
 
-class UserOut(BaseModel):
+class UsersOut(BaseModel):
     username: str
     email_address: EmailStr
 
