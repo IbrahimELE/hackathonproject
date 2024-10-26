@@ -1,9 +1,8 @@
 <script setup>
-  import { userToastStore } from '../stores/toast'
+  import { useToastStore } from '../stores/toast'
 
-  const store = userToastStore()
-
-  return { store }
+  const store = useToastStore()
+  
 </script>
 
 <template>

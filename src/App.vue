@@ -52,8 +52,28 @@
 
 <script>
   import Toast from './components/Toast.vue';
+  import { getUserStore } from './stores/user'
+  import axios from 'axios'
 
   export default {
-    components: { Toast }
+    setup() {
+      const userStore = getUserStore()
+
+      return {
+        userStore
+      }
+    },
+    components: { Toast },
+
+    beforeCreate() {
+      this.userStore.initStore()
+      this.token = this.userStore.user.access
+
+      if (token) {
+        axios.defaults.headers.common["Authorization"] = "Bearer " + token
+      } else {
+        axios.defaults.headers.common["Authorization"] = ""
+      }
+    }
   }
 </script>

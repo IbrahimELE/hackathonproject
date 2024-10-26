@@ -20,11 +20,12 @@
 
       <div class="main-center col-span-2 space-y-4">
         <div class="p-12 bg-white border border-gray-200 rounded-lg">
-          <form class="space-y-6">
+          <form class="space-y-6" :submit.prevent="submitForm()">
             <div>
               <label>E-mail</label><br />
               <input
                 type="email"
+                v-model="form.email"
                 placeholder="Your e-mail address"
                 class="w-full mt-2 py-4 px-6 border border-gray-200 rounded-lg"
               />
@@ -34,6 +35,7 @@
               <label>Password</label><br />
               <input
                 type="password"
+                v-model="form.password"
                 placeholder="Your password"
                 class="w-full mt-2 py-4 px-6 border border-gray-200 rounded-lg"
               />
@@ -50,3 +52,65 @@
     </div>
   </main>
 </template>
+
+<script>
+import { useUserStore } from '../stores/user'
+import axios from 'axios'
+
+export default {
+  setup() {
+    const userStore = useUserStore()
+
+    return {
+      userStore
+    }
+  },
+
+  data() {
+    return {
+      form: {
+        email_address: '',
+        password: '',
+      }
+    }
+  },
+
+  methods: {
+    async submitForm() {
+      this.errors = []
+
+      if (this.form.email_address === '') {
+        this.errors.push('Your e-mail is missing')
+      }
+
+      if (this.form.password === '') {
+        this.errors.push('Your password is missing')
+      }
+
+      if (this.errors.length === 0) {
+        await axios
+          .post('/login/', this.form)
+          .then(response => {
+            this.userStore.setToken(response);
+
+            axios.defaults.headers.common["Authorization"] = "Bearer " + response.access
+          })
+          .catch(error => {
+            console.log('error', error)
+          })
+
+          await axios
+          .post('/me/', this.form)
+          .then(response => {
+            this.userStore.setUserInfo(response);
+
+            this.$router.push('/')
+          })
+          .catch(error => {
+            console.log('error', error)
+          })
+      }
+    }
+  }
+}
+</script>
