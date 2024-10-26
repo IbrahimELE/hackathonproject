@@ -13,7 +13,9 @@ class UsersDB(Base):
     last_name = Column(String(255), nullable=False)
     email_address = Column(String(255), unique=True, index=True)
     password = Column(String(255), nullable=False)
-
+    refresh_token = Column(String(255), nullable=True)
+    access_token = Column(String, nullable=True)
+    
     posts = relationship("PostsDB", back_populates="user")
     comments = relationship("CommentsDB", back_populates="user")
     likes = relationship("LikesDB", back_populates="user")

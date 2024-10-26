@@ -11,7 +11,7 @@ from schemas.likes import Likes
 from models.comments import CommentsDB
 from models.likes import LikesDB
 from crud.users import create_user, get_user_by_email, get_user_by_username
-from utils.authentication import create_access_token, verify_password, get_current_user, get_password_hash
+from utils.authentication import create_access_token, verify_password, get_current_user, get_password_hash, create_refresh_token, store_refresh_token, store_access_token
 from fastapi.middleware.cors import CORSMiddleware
 import random
 
@@ -19,11 +19,9 @@ load_dotenv()
 
 app = FastAPI()
 
-
-
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["192.168.122.247:5173"],  
+    allow_origins=["192.168.122.247:5173", "http://localhost:5173"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -56,7 +54,8 @@ def register(user: UsersCreate, db: Session = Depends(get_db)):
     create_user(db, user_data)
 
     access_token = create_access_token(data={"sub": user.username})
-    return {"user": user_data, "access_token": access_token, "token-type": "bearer"}
+    
+    return {"user": user_data, "access_token": access_token, "token-type": "bearer", "message": "success"}
 
 @app.post("/login")
 async def login(user: LoginForm,  db: Session = Depends(get_db)):
@@ -72,6 +71,10 @@ async def login(user: LoginForm,  db: Session = Depends(get_db)):
         )
 
     access_token = create_access_token(data={"sub": userdb.username})
+    refresh_token = create_refresh_token(data={"sub": userdb.username})
+
+    store_access_token(db, userdb.id, access_token)
+    store_refresh_token(db, userdb.id, refresh_token)
 
     return {
         "access_token": access_token,

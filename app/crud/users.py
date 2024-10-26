@@ -22,8 +22,11 @@ def create_user(db: Session, user: UsersCreate):
 def get_user_by_email(db: Session, email_address: str):
     return db.query(UsersDB).filter(UsersDB.email_address == email_address).first()
 
+def get_user_by_id(db: Session, user_id: int):
+    user = db.query(UsersDB).filter(UsersDB.id == user_id).first()
 def verify_password(plain_password: str, hashed_password: str) -> bool:
     return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 def get_user_by_username(db: Session, username: str):
     return db.query(UsersDB).filter(UsersDB.username == username).first()
+
