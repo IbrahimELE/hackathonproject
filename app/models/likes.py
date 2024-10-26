@@ -9,11 +9,12 @@ class Like_type(str, PyEnum):
 
 class LikesDB(Base):
     __tablename__ = "likes"
-
+    __table_args__ = {'schema': 'baza'}
+    
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    post_id = Column(Integer, ForeignKey("posts.id"), nullable=True)
-    comment_id = Column(Integer, ForeignKey("comments.id"), nullable=True)
+    user_id = Column(Integer, ForeignKey("baza.users.id"), nullable=False)
+    post_id = Column(Integer, ForeignKey("baza.posts.id"), nullable=True)
+    comment_id = Column(Integer, ForeignKey("baza.comments.id"), nullable=True)
     type = Column(Enum(Like_type), nullable=False)
 
     user = relationship("UsersDB", back_populates="likes")

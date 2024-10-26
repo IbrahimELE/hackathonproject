@@ -5,7 +5,8 @@ from database import Base
 
 class UsersDB(Base):
     __tablename__ = "users"
-
+    __table_args__ = {'schema': 'baza'}
+    
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String(255), unique=True)
     first_name = Column(String(255), nullable=False)

@@ -3,13 +3,14 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from database import get_db  
-from schemas.users import UsersCreate, UsersOut, LoginForm
+from schemas.users import UsersCreate, UsersOut, LoginForm, User
 from models.users import UsersDB
 from models.posts import PostsDB
 from models.comments import CommentsDB
 from models.likes import LikesDB
-from crud.users import create_user, get_user_by_email 
+from crud.users import create_user, get_user_by_email, get_user_by_username
 from utils.authentication import create_access_token, verify_password, get_current_user, get_password_hash
+import random
 
 load_dotenv()
 
@@ -24,28 +25,34 @@ def test_db_connection(db: Session = Depends(get_db)):
         raise HTTPException(status_code=500, detail=str(e))
     
 
-@app.post("/register", response_model=UsersOut)
+@app.post("/register")
 def register(user: UsersCreate, db: Session = Depends(get_db)):
-    if get_user_by_email(db, user.email_address):
-        raise HTTPException(status_code=400, detail="Email already registered")
+    if get_user_by_email(db, user.email_address) or get_user_by_username(db, user.username):
+        raise HTTPException(status_code=400, detail="Email or username already registered")
+    
+    hash_password = get_password_hash(user.password)
+    random_id = random.randint(0, 255)
 
-    user_data = {
-        "username": user.username,
-        "first_name":user.first_name,
-        "last_name": user.last_name,
-        "email_address": user.email_address,
-        "password": get_password_hash(user.password)    
-    }
+    user_data = User(
+        id=random_id,
+        username=user.username,
+        first_name=user.first_name,
+        last_name=user.last_name,
+        email_address=user.email_address,
+        password=hash_password,
+    )
+    create_user(db, user_data)
+
     access_token = create_access_token(data={"sub": user.username})
-
-    create_user(db, user_data)  
     return {"user": user_data, "access_token": access_token, "token-type": "bearer"}
 
 @app.post("/login")
-def login( user = LoginForm,  db: Session = Depends(get_db)):
-    userdb = get_user_by_email(db, email_address=user.email_address)
+async def login(user: LoginForm,  db: Session = Depends(get_db)):
+
+    userdb = get_user_by_email(db, user.email_address)
     
-    if not user or not verify_password(user.password, userdb.password):
+
+    if not userdb or not verify_password(user.password, userdb.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
@@ -59,8 +66,8 @@ def login( user = LoginForm,  db: Session = Depends(get_db)):
         "token_type": "bearer"
     }
 
-@app.get("/users/me", response_model=UsersOut)
-async def read_users_me(current_user: UsersOut = Depends(get_current_user)):
-    return current_user 
-
-
+@app.delete("/delete/my_profile")
+async def delete_user(current_user: UsersDB = Depends(get_current_user), db: Session = Depends(get_db)):
+    db.delete(current_user)
+    db.commit()
+    return {"detail": "Profile deleted successfully"}

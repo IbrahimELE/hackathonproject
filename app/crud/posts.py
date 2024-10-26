@@ -12,7 +12,7 @@ def create_post(db: Session, post: PostsCreate):
         created_at=datetime.now(timezone.utc),
         post_status=post.post_status
     )
-    db.add(db_post)
+    db.add(db_post) #db.execute("SELECT * FROM baza.users")
     db.commit()
     db.refresh(db_post)
     return db_post
