@@ -13,7 +13,7 @@ from crud.users import get_user_by_email, get_user_by_id
 from database import get_db
 
 load_dotenv()
-
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 SECRET_KEY = os.getenv("SECRET_KEY")
 ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
@@ -106,12 +106,28 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         raise credentials_exception
     return user
     """
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
+
+
+def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> UsersDB:
     try:
-        # Validate the access token
-        payload = validate_access_token(token)
-        user_id = payload["sub"]  # Extract user ID or username from the token
-        user = get_user_by_id(user_id, db)  # Fetch the user from the database
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid token",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        user = db.query(UsersDB).filter(UsersDB.username == username).first()
+        if user is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found",
+            )
         return user
-    except Exception:
-        raise HTTPException(status_code=403, detail="Could not validate credentials")
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token",
+            headers={"WWW-Authenticate": "Bearer"},
+        )

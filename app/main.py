@@ -12,8 +12,10 @@ from models.comments import CommentsDB
 from models.likes import LikesDB
 from crud.users import create_user, get_user_by_email, get_user_by_username
 from utils.authentication import create_access_token, verify_password, get_current_user, get_password_hash, create_refresh_token, store_refresh_token, store_access_token
+from utils.authentication import oauth2_scheme
 from fastapi.middleware.cors import CORSMiddleware
 import random
+from typing import Set
 
 load_dotenv()
 
@@ -90,9 +92,19 @@ def create_post(post: PostsCreate, db: Session = Depends(get_db), current_user: 
     db.refresh(db_post)
     return db_post
 
+blacklisted_tokens: Set[str] = set()  # Store blacklisted tokens in memory for simplicity
 
-@app.delete("/delete/my_profile")
-async def delete_user(current_user: UsersDB = Depends(get_current_user), db: Session = Depends(get_db)):
+@app.post("/logout")
+def logout(token: str = Depends(oauth2_scheme)):
+    blacklisted_tokens.add(token)
+    return {"message": "Logged out successfully"}
+
+def is_token_blacklisted(token: str) -> bool:
+    return token in blacklisted_tokens
+
+@app.delete("/delete/my_profile", status_code=status.HTTP_204_NO_CONTENT)
+def delete_current_user( db: Session = Depends(get_db), current_user: UsersDB = Depends(get_current_user)
+):
     db.delete(current_user)
     db.commit()
-    return {"detail": "Profile deleted successfully"}
+    return {"detail": "User deleted successfully"}
