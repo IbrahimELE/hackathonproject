@@ -101,6 +101,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 @app.get("/test_db_connection")
 def test_db_connection(db: Session = Depends(get_db)):
     try:
@@ -109,44 +110,87 @@ def test_db_connection(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-
 @app.post("/register")
-def register(user: UsersCreate, db: Session = Depends(get_db)):
+def register(user: UsersCreate):
+    db = next(get_db())
     if get_user_by_email(db, user.email_address) or get_user_by_username(db, user.username):
         raise HTTPException(status_code=400, detail="Email or username already registered")
     
     hash_password = get_password_hash(user.password)
     random_id = random.randint(0, 255)
 
-    user_data = User(
+    user_data = UsersDB(
         id=random_id,
         username=user.username,
         first_name=user.first_name,
         last_name=user.last_name,
         email_address=user.email_address,
-        password=user.password,
+        password=hash_password,
     )
-    create_user(db, user_data)
+    
+    db.add(user_data)
+    db.commit()
+    db.refresh(user_data)
 
-    return {"user": user_data}
+    return {"user": user_data, "message": "success"}
 
 @app.post("/login")
-async def login(user: LoginForm,  db: Session = Depends(get_db)):
-
+def login(user: LoginForm):
+    db = next(get_db())
     userdb = get_user_by_email(db, user.email_address)
-    
+
+    global current_user
 
     if not userdb or not verify_password(user.password, userdb.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid username or password",
-            headers={"WWW-Authenticate": "Bearer"},
         )
+    
+    current_user = {
+        "username": userdb.username,
+        "email_address": userdb.email_address,
+        "id": userdb.id,
+    }
+    return {"message": "Login successful"}
 
+@app.post("/posts")
+def create_post(post: PostsCreate):
+    global current_user 
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not logged in")
 
-    return {userdb.username, userdb.first_name, userdb.last_name}
+    db = next(get_db())  
+    db_post = PostsDB(title=post.title, content=post.content, user_id=current_user["id"], created_at=post.created_at, post_status=post.post_status)
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
 
+@app.post("/logout")
+def logout():
+    global current_user
+    current_user = None
+    return {"message": "Logged out successfully"}
 
+@app.delete("/delete/my_profile", status_code=status.HTTP_204_NO_CONTENT)
+def delete_current_user():
+    global current_user
+    if current_user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not logged in")
+    
+    db = next(get_db())
+    
+    db.query(PostsDB).filter(PostsDB.user_id == current_user["id"]).delete()
+
+    user_to_delete = db.query(UsersDB).filter(UsersDB.email_address == current_user["email_address"]).first()
+
+    if user_to_delete is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    db.delete(user_to_delete)  
+    db.commit()
+    return {"detail": "User deleted successfully"}
 
 class ConnectionManager:
     def __init__(self):
