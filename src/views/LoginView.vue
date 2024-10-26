@@ -25,7 +25,7 @@
               <label>E-mail</label><br />
               <input
                 type="email"
-                v-model="form.email"
+                v-model="form.email_address"
                 placeholder="Your e-mail address"
                 class="w-full mt-2 py-4 px-6 border border-gray-200 rounded-lg"
               />
@@ -76,7 +76,7 @@ export default {
   },
 
   methods: {
-    async submitForm() {
+    submitForm() {
       this.errors = []
 
       if (this.form.email_address === '') {
@@ -87,28 +87,36 @@ export default {
         this.errors.push('Your password is missing')
       }
 
+      console.log(this.errors)
+
       if (this.errors.length === 0) {
-        await axios
-          .post('/login/', this.form)
+        axios
+          .post('/login', this.form)
           .then(response => {
-            this.userStore.setToken(response);
+            console.log(response)
 
-            axios.defaults.headers.common["Authorization"] = "Bearer " + response.access
+            localStorage.setItem('first_name', response.data[0]);
+            localStorage.setItem('last_name', response.data[1]);
+            localStorage.setItem('username', response.data[2]);
+            localStorage.setItem('password', this.password);
+            location.replace('/feed')
           })
           .catch(error => {
             console.log('error', error)
           })
 
-          await axios
-          .post('/me/', this.form)
-          .then(response => {
-            this.userStore.setUserInfo(response);
+          
 
-            this.$router.push('/')
-          })
-          .catch(error => {
-            console.log('error', error)
-          })
+          // await axios
+          // .post('/me/', this.form)
+          // .then(response => {
+          //   this.userStore.setUserInfo(response);
+
+          //   this.$router.push('/')
+          // })
+          // .catch(error => {
+          //   console.log('error', error)
+          // })
       }
     }
   }
