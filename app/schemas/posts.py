@@ -2,8 +2,7 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from enum import Enum
 from datetime import datetime
 from typing import List
-from likes import Likes
-from comments import Comments
+
 
 
 class Post_status(str, Enum):
@@ -37,7 +36,7 @@ class Posts(BaseModel):
     user_id: int
     created_at: datetime
     post_status: Post_status = Post_status.hidden
-    likes: List[Likes] = []  
-    comments: List[Comments] = []  
+    likes: List 
+    comments: List 
 
     model_config = ConfigDict(arbitrary_types_allowed=True)

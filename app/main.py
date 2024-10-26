@@ -4,18 +4,30 @@ from sqlalchemy.orm import Session
 from dotenv import load_dotenv
 from database import get_db  
 from schemas.users import UsersCreate, UsersOut, LoginForm, User
+from schemas.posts import Posts, PostsCreate
 from models.users import UsersDB
 from models.posts import PostsDB
+from schemas.likes import Likes
 from models.comments import CommentsDB
 from models.likes import LikesDB
 from crud.users import create_user, get_user_by_email, get_user_by_username
 from utils.authentication import create_access_token, verify_password, get_current_user, get_password_hash
+from fastapi.middleware.cors import CORSMiddleware
 import random
 
 load_dotenv()
 
 app = FastAPI()
 
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["192.168.122.247:5173"],  
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 @app.get("/test_db_connection")
 def test_db_connection(db: Session = Depends(get_db)):
     try:
@@ -39,7 +51,7 @@ def register(user: UsersCreate, db: Session = Depends(get_db)):
         first_name=user.first_name,
         last_name=user.last_name,
         email_address=user.email_address,
-        password=hash_password,
+        password=user.password,
     )
     create_user(db, user_data)
 
@@ -65,6 +77,16 @@ async def login(user: LoginForm,  db: Session = Depends(get_db)):
         "access_token": access_token,
         "token_type": "bearer"
     }
+
+
+@app.post("/posts")
+def create_post(post: PostsCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    db_post = PostsCreate(title=post.title, content=post.content, user_id=current_user.id)
+    db.add(db_post)
+    db.commit()
+    db.refresh(db_post)
+    return db_post
+
 
 @app.delete("/delete/my_profile")
 async def delete_user(current_user: UsersDB = Depends(get_current_user), db: Session = Depends(get_db)):
