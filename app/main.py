@@ -22,8 +22,6 @@ load_dotenv()
 
 app = FastAPI()
 
-current_user = None
-
 html = """
 <!DOCTYPE html>
 <html>
@@ -113,35 +111,30 @@ def test_db_connection(db: Session = Depends(get_db)):
     
 
 @app.post("/register")
-def register(user: UsersCreate):
-    db = next(get_db())
+def register(user: UsersCreate, db: Session = Depends(get_db)):
     if get_user_by_email(db, user.email_address) or get_user_by_username(db, user.username):
         raise HTTPException(status_code=400, detail="Email or username already registered")
     
     hash_password = get_password_hash(user.password)
     random_id = random.randint(0, 255)
 
-    user_data = UsersDB(
+    user_data = User(
         id=random_id,
         username=user.username,
         first_name=user.first_name,
         last_name=user.last_name,
         email_address=user.email_address,
-        password=hash_password,
+        password=user.password,
     )
-    
-    db.add(user_data)
-    db.commit()
-    db.refresh(user_data)
+    create_user(db, user_data)
 
-    return {"user": user_data, "message": "success"}
+    return {"user": user_data}
 
 @app.post("/login")
-def login(user: LoginForm):
-    db = next(get_db())
-    userdb = get_user_by_email(db, user.email_address)
+async def login(user: LoginForm,  db: Session = Depends(get_db)):
 
-    global current_user
+    userdb = get_user_by_email(db, user.email_address)
+    
 
     if not userdb or not verify_password(user.password, userdb.password):
         raise HTTPException(
@@ -150,39 +143,46 @@ def login(user: LoginForm):
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    access_token = create_access_token(data={"sub": userdb.username})
-    refresh_token = create_refresh_token(data={"sub": userdb.username})
 
-    store_access_token(db, userdb.id, access_token)
-    store_refresh_token(db, userdb.id, refresh_token)
-
-    return {
-        "access_token": access_token,
-        "token_type": "bearer"
-    }
+    return {userdb.username, userdb.first_name, userdb.last_name}
 
 
-@app.post("/posts")
-def create_post(post: PostsCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    db_post = PostsCreate(title=post.title, content=post.content, user_id=current_user.id)
-    db.add(db_post)
-    db.commit()
-    db.refresh(db_post)
-    return db_post
 
-blacklisted_tokens: Set[str] = set()  # Store blacklisted tokens in memory for simplicity
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+    
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
 
-@app.post("/logout")
-def logout(token: str = Depends(oauth2_scheme)):
-    blacklisted_tokens.add(token)
-    return {"message": "Logged out successfully"}
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
 
-def is_token_blacklisted(token: str) -> bool:
-    return token in blacklisted_tokens
+    async def send_personal_message(self, message: str, websocket: WebSocket):
+        await websocket.send_text(message)
+    
+    async def broadcast(self, message: str):
+        for connection in self.active_connections:
+            await connection.send_text(message)
 
-@app.delete("/delete/my_profile", status_code=status.HTTP_204_NO_CONTENT)
-def delete_current_user( db: Session = Depends(get_db), current_user: UsersDB = Depends(get_current_user)
-):
-    db.delete(current_user)
-    db.commit()
-    return {"detail": "User deleted successfully"}
+    
+manager = ConnectionManager()
+
+
+@app.get("/")
+async def get():
+    return HTMLResponse(html)
+
+
+@app.websocket("/ws/{username}")
+async def websocket_endpoint(websocket: WebSocket, username: str):
+    await manager.connect(websocket)
+    try: 
+        while True:
+            data = await websocket.receive_text()
+            await manager.send_personal_message(f"{username}: {data}", websocket)
+            await manager.broadcast(f"{username} says: {data}")
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+        await manager.broadcast(f"{username} has left the chat")
